@@ -597,6 +597,28 @@ if dev_mode:
 
 with proxy_col:
     proxy = st.text_input("代理", placeholder="http://127.0.0.1:7897", key="w_proxy")
+    if st.button("🔌 测试连接", key="proxy_test_btn", use_container_width=True):
+        _test_proxy = proxy.strip() if proxy else None
+        with st.spinner("正在测试代理..."):
+            import urllib.request as _ur
+            import socket as _sock
+            try:
+                _opener_args = {}
+                if _test_proxy:
+                    _ph = _test_proxy.split("://", 1)
+                    _scheme = _ph[0] if len(_ph) > 1 else "http"
+                    _ph_handler = _ur.ProxyHandler({"http": _test_proxy, "https": _test_proxy})
+                    _opener = _ur.build_opener(_ph_handler)
+                else:
+                    _opener = _ur.build_opener()
+                _opener.addheaders = [("User-Agent", "Mozilla/5.0")]
+                _resp = _opener.open("https://api.ipify.org?format=json", timeout=10)
+                _data = json.loads(_resp.read().decode())
+                _ip = _data.get("ip", "unknown")
+                st.success(f"✅ 连接成功! 出口 IP: `{_ip}`")
+            except Exception as _pe:
+                st.error(f"❌ 连接失败: {_pe}")
+
 
 # ── 已有账号选择 / Token 输入 ──
 cred_email = ""
@@ -1174,13 +1196,16 @@ with tab_run:
             cols[1].metric("Checkout", (r.get("checkout_session_id", "")[:20] + "...") if r.get("checkout_session_id") else "-")
             cols[2].metric("Confirm", r.get("confirm_status") or "-")
             cols[3].metric("状态", "成功" if r.get("success") else "失败")
-            if r.get("confirm_response"):
-                with st.expander("Stripe 原始响应", expanded=False):
-                    st.json(r["confirm_response"])
-            pull_captured_logs()
-            if st.session_state.log_buffer:
-                with st.expander("日志", expanded=False):
-                    st.code("\n".join(st.session_state.log_buffer[-200:]), language="log")
+            if r.get(\"confirm_response\"):
+                with st.expander(\"Stripe 原始响应\", expanded=False):
+                    st.json(r[\"confirm_response\"])
+
+    # ── 实时日志面板 (运行中自动展开, 结束后保留) ──
+    pull_captured_logs()
+    if st.session_state.log_buffer:
+        log_text = "\n".join(st.session_state.log_buffer[-300:])
+        with st.expander("📋 运行日志", expanded=st.session_state.running):
+            st.code(log_text, language="log")
 
 
 # Tab: 账号
