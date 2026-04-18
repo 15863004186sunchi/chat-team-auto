@@ -41,21 +41,14 @@ RUN pip install --no-cache-dir playwright
 # Install Playwright Chromium
 RUN playwright install chromium
 
-# Copy the rest of the application
+# Copy the application code
 COPY . .
+
+# Ensure start.sh is executable
+RUN chmod +x start.sh
 
 # Expose Streamlit port
 EXPOSE 8503
 
-# Create a startup script to handle Xvfb and Streamlit
-# Added: 
-# 1. Cleanup of Xvfb lock files to prevent "Server is already active" error
-# 2. --browser.gatherUsageStats=false to skip Streamlit email prompt
-RUN echo '#!/bin/bash\n\
-rm -rf /tmp/.X99-lock /tmp/.X11-unix/X99\n\
-Xvfb :99 -screen 0 1280x720x24 -ac -nolisten tcp &\n\
-exec streamlit run ui.py --server.port 8503 --server.address 0.0.0.0 --browser.gatherUsageStats=false' > /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Start the application
-CMD ["/app/start.sh"]
+# Start the application via the dedicated script
+CMD ["./start.sh"]
