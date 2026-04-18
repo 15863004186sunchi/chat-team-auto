@@ -597,25 +597,83 @@ if dev_mode:
 
 with proxy_col:
     proxy = st.text_input("代理", placeholder="http://127.0.0.1:7897", key="w_proxy")
-    if st.button("🔌 测试连接", key="proxy_test_btn", use_container_width=True):
+    if st.button("🔌 测试连接 & IP 画像", key="proxy_test_btn", use_container_width=True):
         _test_proxy = proxy.strip() if proxy else None
-        with st.spinner("正在测试代理..."):
+        with st.spinner("正在检测出口 IP 和纯净度..."):
             import urllib.request as _ur
-            import socket as _sock
             try:
-                _opener_args = {}
+                # Step 1: 获取出口 IP
                 if _test_proxy:
-                    _ph = _test_proxy.split("://", 1)
-                    _scheme = _ph[0] if len(_ph) > 1 else "http"
                     _ph_handler = _ur.ProxyHandler({"http": _test_proxy, "https": _test_proxy})
                     _opener = _ur.build_opener(_ph_handler)
                 else:
                     _opener = _ur.build_opener()
                 _opener.addheaders = [("User-Agent", "Mozilla/5.0")]
-                _resp = _opener.open("https://api.ipify.org?format=json", timeout=10)
-                _data = json.loads(_resp.read().decode())
-                _ip = _data.get("ip", "unknown")
-                st.success(f"✅ 连接成功! 出口 IP: `{_ip}`")
+                _ip_resp = _opener.open("https://api.ipify.org?format=json", timeout=10)
+                _ip = json.loads(_ip_resp.read().decode()).get("ip", "")
+
+                if not _ip:
+                    st.error("❌ 无法获取出口 IP，请检查代理配置")
+                else:
+                    st.success(f"✅ 连接成功！出口 IP: `{_ip}`")
+                    # Step 2: ip-api.com 获取地理 & ISP 信息 (免费, 无需 Key)
+                    _ip_info = {}
+                    try:
+                        _ir = _ur.urlopen(
+                            f"http://ip-api.com/json/{_ip}?fields=country,regionName,city,isp,org,as,proxy,hosting",
+                            timeout=8,
+                        )
+                        _ip_info = json.loads(_ir.read().decode())
+                    except Exception:
+                        pass
+
+                    # Step 3: proxycheck.io 获取类型 & 风险评分 (免费, 1000次/天)
+                    _pc_info = {}
+                    try:
+                        _pr = _ur.urlopen(
+                            f"https://proxycheck.io/v2/{_ip}?vpn=1&risk=1&short=1",
+                            timeout=8,
+                        )
+                        _pc_raw = json.loads(_pr.read().decode())
+                        _pc_info = _pc_raw.get(_ip, {})
+                    except Exception:
+                        pass
+
+                    # ── 渲染 IP 画像卡片 ──
+                    _isp      = _ip_info.get("isp") or _ip_info.get("org") or "-"
+                    _country  = _ip_info.get("country", "-")
+                    _city     = _ip_info.get("city", "") or _ip_info.get("regionName", "")
+                    _as_str   = _ip_info.get("as", "")
+                    _pc_type  = _pc_info.get("type", "")
+                    _pc_risk  = _pc_info.get("risk", None)
+                    _pc_proxy = _pc_info.get("proxy", "no")
+
+                    _is_residential = "residential" in _pc_type.lower() or (
+                        not _ip_info.get("hosting") and _pc_proxy == "no"
+                    )
+                    _type_label = _pc_type if _pc_type else ("住宅 Residential" if _is_residential else "机房 Datacenter")
+                    _type_badge = f"🏠 {_type_label}" if _is_residential else f"🏢 {_type_label}"
+
+                    if _pc_risk is not None:
+                        _risk_int = int(_pc_risk)
+                        _risk_badge = (
+                            f"🟢 纯净 ({_risk_int}/100)" if _risk_int <= 30
+                            else f"🟡 中等 ({_risk_int}/100)" if _risk_int <= 65
+                            else f"🔴 高危 ({_risk_int}/100)"
+                        )
+                    else:
+                        _risk_badge = "⚪ 未知"
+
+                    st.markdown("**📊 IP 画像**")
+                    _col1, _col2 = st.columns(2)
+                    _col1.metric("IP 类型", _type_badge)
+                    _col2.metric("风险评分", _risk_badge)
+                    _col3, _col4 = st.columns(2)
+                    _col3.metric("归属地", f"{_country} · {_city}")
+                    _col4.metric("ISP / 运营商", (_isp[:26] + "…") if len(_isp) > 26 else _isp)
+                    if _as_str:
+                        st.caption(f"AS 号: {_as_str}")
+
             except Exception as _pe:
                 st.error(f"❌ 连接失败: {_pe}")
 
