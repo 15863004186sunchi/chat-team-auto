@@ -13,6 +13,10 @@ fi
 
 echo "使用命令: $DOCKER_COMPOSE"
 
+# 首先确保 config.json 存在
+bash prepare.sh
+
+echo ""
 echo "正在停止旧容器..."
 $DOCKER_COMPOSE down
 
@@ -21,6 +25,7 @@ $DOCKER_COMPOSE up --build -d
 
 echo "============================="
 echo "  ✅ Docker 部署完成!"
-echo "  🌐 访问地址: http://localhost:8503"
+echo "  🌐 访问地址: http://$(hostname -I | awk '{print $1}'):8503"
 echo "  📝 配置文件已挂载: ./config.json"
+echo "  📊 查看日志: docker logs -f abcard-app"
 echo "============================="

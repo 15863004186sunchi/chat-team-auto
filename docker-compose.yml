@@ -7,9 +7,9 @@ services:
     ports:
       - "8503:8503"
     volumes:
-      - ./config.json:/app/config.json
-      - ./test_outputs:/app/test_outputs
-    restart: always
+      # config.json is NOT in git. Run ./prepare.sh first to create it.
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:

@@ -1,32 +1,15 @@
-# Using Python 3.11 slim as base
+# Using Python 3.11 slim as base (Debian Bookworm)
 FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV DISPLAY=:99
 
-# Install system dependencies for Chromium and Playwright
+# Install system dependencies - using playwright's --with-deps handles most of these
 RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
-    wget \
     curl \
-    unzip \
-    libnss3 \
-    libatk-bridge2.0-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    libatspi2.0-0 \
-    libcups2 \
-    libxkbcommon0 \
-    libgtk-3-0 \
-    fonts-liberation \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,17 +21,17 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir playwright
 
-# Install Playwright Chromium
-RUN playwright install chromium
+# Install Playwright Chromium WITH all system dependencies automatically
+RUN playwright install --with-deps chromium
 
 # Copy the application code
 COPY . .
 
-# Ensure start.sh is executable
-RUN chmod +x start.sh
+# Ensure start.sh is executable and fix line endings
+RUN sed -i 's/\r//' start.sh && chmod +x start.sh
 
 # Expose Streamlit port
 EXPOSE 8503
 
 # Start the application via the dedicated script
-CMD ["./start.sh"]
+CMD ["bash", "start.sh"]
