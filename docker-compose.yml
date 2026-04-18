@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  abcard:
+    build: .
+    container_name: abcard-app
+    ports:
+      - "8503:8503"
+    volumes:
+      - ./config.json:/app/config.json
+      - ./test_outputs:/app/test_outputs
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
