@@ -48,7 +48,13 @@ COPY . .
 EXPOSE 8503
 
 # Create a startup script to handle Xvfb and Streamlit
-RUN echo '#!/bin/bash\nXvfb :99 -screen 0 1280x720x24 -ac -nolisten tcp &\nexec streamlit run ui.py --server.port 8503 --server.address 0.0.0.0' > /app/start.sh
+# Added: 
+# 1. Cleanup of Xvfb lock files to prevent "Server is already active" error
+# 2. --browser.gatherUsageStats=false to skip Streamlit email prompt
+RUN echo '#!/bin/bash\n\
+rm -rf /tmp/.X99-lock /tmp/.X11-unix/X99\n\
+Xvfb :99 -screen 0 1280x720x24 -ac -nolisten tcp &\n\
+exec streamlit run ui.py --server.port 8503 --server.address 0.0.0.0 --browser.gatherUsageStats=false' > /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Start the application
