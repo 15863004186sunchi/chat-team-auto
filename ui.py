@@ -1254,9 +1254,9 @@ with tab_run:
             cols[1].metric("Checkout", (r.get("checkout_session_id", "")[:20] + "...") if r.get("checkout_session_id") else "-")
             cols[2].metric("Confirm", r.get("confirm_status") or "-")
             cols[3].metric("状态", "成功" if r.get("success") else "失败")
-            if r.get(\"confirm_response\"):
-                with st.expander(\"Stripe 原始响应\", expanded=False):
-                    st.json(r[\"confirm_response\"])
+            if r.get("confirm_response"):
+                with st.expander("Stripe 原始响应", expanded=False):
+                    st.json(r["confirm_response"])
 
     # ── 实时日志面板 (运行中自动展开, 结束后保留) ──
     pull_captured_logs()
