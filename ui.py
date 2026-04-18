@@ -665,14 +665,13 @@ with proxy_col:
                         _risk_badge = "⚪ 未知"
 
                     st.markdown("**📊 IP 画像**")
-                    _col1, _col2 = st.columns(2)
-                    _col1.metric("IP 类型", _type_badge)
-                    _col2.metric("风险评分", _risk_badge)
-                    _col3, _col4 = st.columns(2)
-                    _col3.metric("归属地", f"{_country} · {_city}")
-                    _col4.metric("ISP / 运营商", (_isp[:26] + "…") if len(_isp) > 26 else _isp)
-                    if _as_str:
-                        st.caption(f"AS 号: {_as_str}")
+                    st.info(f"""
+- **IP 类型**: {_type_badge}
+- **风险评分**: {_risk_badge}
+- **归属地**: {_country} · {_city}
+- **ISP / 运营商**: {_isp}
+{f"- **AS 号**: {_as_str}" if _as_str else ""}
+                    """)
 
             except Exception as _pe:
                 st.error(f"❌ 连接失败: {_pe}")
