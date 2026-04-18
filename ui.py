@@ -631,7 +631,7 @@ with proxy_col:
                     _pc_info = {}
                     try:
                         _pr = _ur.urlopen(
-                            f"https://proxycheck.io/v2/{_ip}?vpn=1&risk=1&short=1",
+                            f"https://proxycheck.io/v2/{_ip}?vpn=1&risk=1",
                             timeout=8,
                         )
                         _pc_raw = json.loads(_pr.read().decode())
